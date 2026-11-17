@@ -1,1 +1,1541 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 
+:root {
+  --bg: #080a0f;
+  --surface: rgba(22, 26, 35, 0.78);
+  --surface-solid: #161a23;
+  --surface-hover: rgba(33, 39, 52, 0.92);
+  --border: rgba(148, 178, 214, 0.14);
+  --border-bright: rgba(107, 208, 255, 0.36);
+  --blue: #1a74e2;
+  --mid: #3fa0ef;
+  --light: #6bd0ff;
+  --text: #f0f6ff;
+  --muted: #98adc4;
+  --danger: #ff8a8a;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+html, body {
+  margin: 0; padding: 0; min-height: 100%;
+  background: var(--bg); color: var(--text);
+  font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bm-app, .bm-app * { box-sizing: border-box; }
+.bm-app [hidden] { display: none !important; }
+
+.bm-app {
+  --tile: 158px;
+  position: relative; isolation: isolate; min-height: 100vh; width: 100%;
+  display: flex; flex-direction: column; color: var(--text);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(26,116,226,.22) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 45% at 88% 100%, rgba(74,88,240,.18) 0%, transparent 60%),
+    var(--bg);
+  overflow-x: hidden;
+}
+
+/* ================= GLOBAL AMBIENT BACKGROUND (GPU-COMPOSITED) ================= */
+.bm-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.bm-bg::before {
+  content: ""; position: absolute; inset: -52px;
+  background-image:
+    linear-gradient(rgba(107,208,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(107,208,255,.04) 1px, transparent 1px);
+  background-size: 52px 52px;
+  animation: bm-grid 14s linear infinite;
+  will-change: transform;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 35%, #000 10%, transparent 78%);
+  mask-image: radial-gradient(ellipse at 50% 35%, #000 10%, transparent 78%);
+}
+.bm-par {
+  position: absolute; inset: -48px;
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0);
+  will-change: transform;
+}
+.bm-blob {
+  position: absolute; border-radius: 50%; filter: blur(90px);
+  will-change: transform; transform: translate3d(0,0,0);
+}
+.bm-blob.b1 { width: 480px; height: 480px; left: -8%; top: -10%; background: #1a74e2; opacity: .38; animation: bm-d1 18s ease-in-out infinite alternate; }
+.bm-blob.b2 { width: 390px; height: 390px; right: -6%; top: 16%; background: #6bd0ff; opacity: .18; animation: bm-d2 22s ease-in-out infinite alternate; }
+.bm-blob.b3 { width: 460px; height: 460px; left: 28%; bottom: -18%; background: #3a4de0; opacity: .32; animation: bm-d3 25s ease-in-out infinite alternate; }
+.bm-blob.b4 { width: 280px; height: 280px; left: 56%; top: -8%; background: #8a5cff; opacity: .16; animation: bm-d1 20s ease-in-out infinite alternate-reverse; }
+.bm-spark {
+  position: absolute; bottom: -16px; border-radius: 50%;
+  background: var(--light); box-shadow: 0 0 12px var(--light);
+  opacity: 0; will-change: transform, opacity;
+  animation: bm-float 11s linear infinite;
+}
+
+/* ================= STICKY TOP NAV ================= */
+.bm-nav {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  padding: 12px 26px;
+  background: rgba(10, 12, 18, 0.72);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 1px solid rgba(107,208,255,.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .28);
+}
+.bm-brand {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 11px;
+  background: none; border: 0; padding: 4px 8px; border-radius: 10px; cursor: pointer;
+  color: var(--text); font: inherit; font-size: 21px; letter-spacing: .2px;
+  transition: transform .3s var(--ease), opacity .2s ease;
+}
+.bm-brand:hover { transform: translateY(-1px); }
+.bm-brand:active { transform: scale(.97); }
+.bm-brand svg { width: 34px; height: auto; filter: drop-shadow(0 2px 6px rgba(26,116,226,.55)); }
+.bm-brand b { font-weight: 800; }
+.bm-brand span { font-weight: 400; color: var(--light); }
+
+.bm-nav-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+.bm-nav-tabs {
+  position: relative; display: flex; align-items: center; gap: 4px; padding: 5px;
+  background: rgba(18, 22, 31, 0.86);
+  border: 1px solid rgba(148, 178, 214, 0.16);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+.bm-nav-glider {
+  position: absolute; z-index: 0; top: 5px; bottom: 5px; left: 0; width: 0;
+  border-radius: 999px; pointer-events: none; opacity: 0;
+  background: linear-gradient(135deg, var(--blue), var(--mid));
+  box-shadow: 0 4px 16px rgba(26,116,226,.48), inset 0 1px 0 rgba(255,255,255,.32);
+  will-change: transform, width;
+}
+.bm-nav-glider.ready {
+  opacity: 1;
+  transition: transform .48s var(--ease), width .48s var(--ease), opacity .25s ease;
+}
+.bm-nav-tab {
+  position: relative; z-index: 1; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 20px;
+  color: var(--muted); background: transparent; border: 0; border-radius: 999px;
+  font: 600 14px 'Outfit', sans-serif; cursor: pointer;
+  transition: color .25s ease, transform .2s var(--ease);
+}
+.bm-nav-tab:active { transform: scale(.96); }
+.bm-nav-tab svg { width: 15px; height: 15px; opacity: .75; transition: opacity .25s ease, transform .25s var(--ease); }
+.bm-nav-tab:hover { color: var(--text); }
+.bm-nav-tab:hover svg { opacity: 1; }
+.bm-nav-tab[aria-selected="true"] { color: #fff; }
+.bm-nav-tab[aria-selected="true"] svg { opacity: 1; transform: scale(1.06); }
+
+.bm-sfx-btn {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px;
+  border-radius: 999px; border: 1px solid rgba(148,178,214,.18);
+  background: rgba(18, 22, 31, 0.86); color: var(--light);
+  font: 600 13px 'Outfit', sans-serif; cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, color .2s ease, transform .2s var(--ease);
+}
+.bm-sfx-btn:hover { border-color: var(--border-bright); background: var(--surface-hover); transform: translateY(-1px); }
+.bm-sfx-btn:active { transform: scale(.96); }
+.bm-sfx-btn.muted { color: var(--muted); border-color: var(--border); }
+.bm-sfx-btn svg { width: 15px; height: 15px; }
+
+/* ================= CLICK VISUAL EFFECTS (RIPPLE + RING + SPARKS) ================= */
+.bm-ripple {
+  position: absolute; border-radius: 50%; pointer-events: none; z-index: 10;
+  background: radial-gradient(circle, rgba(255,255,255,.45) 0%, rgba(107,208,255,.25) 45%, transparent 72%);
+  transform: translate3d(-50%, -50%, 0) scale(0);
+  animation: bm-ripple-anim .55s var(--ease) forwards;
+  will-change: transform, opacity;
+}
+.bm-click-ring {
+  position: fixed; left: 0; top: 0; width: 42px; height: 42px; border-radius: 50%;
+  pointer-events: none; z-index: 999;
+  border: 2px solid rgba(107, 208, 255, .75);
+  box-shadow: 0 0 14px rgba(107, 208, 255, .45);
+  transform: translate3d(-50%, -50%, 0) scale(.25);
+  animation: bm-ring-pop .48s var(--ease) forwards;
+  will-change: transform, opacity;
+}
+.bm-click-spark {
+  position: fixed; width: 5px; height: 5px; border-radius: 50%;
+  pointer-events: none; z-index: 999;
+  background: var(--light); box-shadow: 0 0 10px var(--light);
+  animation: bm-spark-burst .52s var(--ease) forwards;
+  will-change: transform, opacity;
+}
+
+/* ================= VIEW CONTAINERS ================= */
+.bm-views {
+  position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column;
+  width: 100%; max-width: 1360px; margin: 0 auto; padding: 22px;
+}
+.bm-view {
+  flex: 1; display: flex; flex-direction: column;
+  animation: bm-view-in .48s var(--ease) both;
+  will-change: transform, opacity;
+}
+
+/* ================= 1. HOME VIEW ================= */
+.bm-hero-view {
+  position: relative; isolation: isolate; overflow: hidden; display: grid; place-items: center;
+  min-height: calc(100vh - 110px); padding: 48px 24px; border-radius: 24px;
+  border: 1px solid rgba(107,208,255,.18);
+  background:
+    radial-gradient(ellipse at 50% 34%, rgba(26,116,226,.24) 0%, transparent 62%),
+    rgba(13, 16, 24, .68);
+  box-shadow: 0 28px 70px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.bm-waves { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.bm-wave { fill: none; stroke-linecap: round; transform-origin: center; will-change: transform; }
+.bm-wave.w1 { stroke: rgba(107,208,255,.52); stroke-width: 2.4; filter: drop-shadow(0 0 10px rgba(107,208,255,.8)); animation: bm-wave 10s ease-in-out infinite alternate; }
+.bm-wave.w2 { stroke: rgba(63,160,239,.34); stroke-width: 1.7; animation: bm-wave 14s ease-in-out infinite alternate-reverse; }
+.bm-wave.w3 { stroke: rgba(255,255,255,.12); stroke-width: 1.1; animation: bm-wave 18s ease-in-out infinite alternate; }
+.bm-floor {
+  position: absolute; left: -50%; right: -50%; bottom: 0; height: 50%; pointer-events: none;
+  background-image: linear-gradient(rgba(107,208,255,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(107,208,255,.22) 1px, transparent 1px);
+  background-size: 60px 60px; transform: perspective(540px) rotateX(64deg); transform-origin: 50% 100%;
+  animation: bm-floor 2.8s linear infinite;
+  -webkit-mask-image: linear-gradient(to top, #000 6%, transparent 82%);
+  mask-image: linear-gradient(to top, #000 6%, transparent 82%);
+}
+.bm-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0,0,0,.58) 100%); }
+
+.bm-hero { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; max-width: 680px; }
+.bm-stage {
+  position: relative; width: 192px; height: 192px; display: grid; place-items: center;
+  transform: translate3d(calc(var(--px, 0px) * -.45), calc(var(--py, 0px) * -.45), 0);
+  will-change: transform;
+}
+.bm-glow { position: absolute; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, rgba(107,208,255,.65), transparent 68%); animation: bm-pulse 3.8s ease-in-out infinite; will-change: transform, opacity; }
+.bm-ring { position: absolute; border-radius: 50%; border: 1.5px solid transparent; will-change: transform; }
+.bm-ring.r1 { inset: 6px; border-top-color: var(--light); border-right-color: rgba(107,208,255,.25); animation: bm-spin 8s linear infinite; }
+.bm-ring.r2 { inset: 26px; border: 1.5px dashed rgba(63,160,239,.55); animation: bm-spin 15s linear infinite reverse; }
+.bm-ring.r3 { inset: -14px; border-bottom-color: rgba(138,92,255,.6); border-left-color: rgba(138,92,255,.15); animation: bm-spin 22s linear infinite; }
+.bm-ring i { position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--light); box-shadow: 0 0 12px 2px var(--light); }
+.bm-hero-logo { position: relative; width: 102px; height: auto; filter: drop-shadow(0 6px 14px rgba(11,63,133,.8)); animation: bm-pop .9s var(--ease) both, bm-bob 4.4s .9s ease-in-out infinite; will-change: transform; }
+.bm-ribbon { animation: bm-drop .75s .35s var(--ease) both; }
+
+.bm-hero-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(107,208,255,.09); border: 1px solid rgba(107,208,255,.25);
+  color: var(--light); font-size: 12.5px; font-weight: 600; letter-spacing: .4px;
+  animation: bm-rise .7s .05s var(--ease) backwards;
+}
+.bm-hero-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--light); box-shadow: 0 0 8px var(--light); }
+
+.bm-hero-title {
+  margin: 0; font-size: clamp(48px, 8.5vw, 88px); line-height: 1; letter-spacing: .5px; color: transparent;
+  background: linear-gradient(90deg, var(--light), #fff, var(--mid), #fff, var(--light)) 0 0 / 250% 100%;
+  -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 8px 26px rgba(26,116,226,.5));
+  animation: bm-text 7s linear infinite, bm-rise .8s .15s var(--ease) backwards;
+}
+.bm-hero-title b { font-weight: 800; }
+.bm-hero-title span { font-weight: 400; }
+.bm-tag { margin: 0; max-width: 44ch; color: var(--muted); font-size: clamp(15.5px, 2.2vw, 19px); line-height: 1.55; animation: bm-rise .8s .26s var(--ease) backwards; }
+.bm-hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 6px; animation: bm-rise .8s .38s var(--ease) backwards; }
+
+.bm-cta-pill {
+  position: relative; padding: 2px; border-radius: 999px; overflow: hidden; border: 0;
+  background: none; cursor: pointer; font: inherit;
+  transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+.bm-cta-pill:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(26,116,226,.4); }
+.bm-cta-pill:active { transform: scale(.96); }
+.bm-cta-pill::before { content: ""; position: absolute; inset: -150%; background: conic-gradient(from 0deg, transparent 0 65%, var(--light) 85%, #fff 90%, transparent 95%); animation: bm-spin 3.4s linear infinite; }
+.bm-cta-pill span { position: relative; overflow: hidden; display: flex; align-items: center; gap: 10px; padding: 13px 28px; color: var(--text); font-size: 16px; font-weight: 600; background: rgba(10,16,30,.94); border-radius: 999px; }
+.bm-cta-pill svg { width: 17px; height: 17px; color: var(--light); transition: transform .3s var(--ease); }
+.bm-cta-pill:hover svg { transform: translateX(3px); }
+
+.bm-cta-secondary {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 10px; padding: 13px 28px; color: var(--text);
+  font: 600 16px 'Outfit', sans-serif; cursor: pointer; background: rgba(24,28,38,.86);
+  border: 1px solid rgba(107,208,255,.28); border-radius: 999px;
+  transition: background .25s ease, border-color .25s ease, transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+.bm-cta-secondary:hover { background: var(--surface-hover); border-color: var(--light); transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+.bm-cta-secondary:active { transform: scale(.96); }
+.bm-cta-secondary svg { width: 17px; height: 17px; color: var(--light); transition: transform .3s var(--ease); }
+.bm-cta-secondary:hover svg { transform: translateX(3px); }
+
+.bm-hero-stats {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px;
+  animation: bm-rise .8s .48s var(--ease) backwards;
+}
+.bm-stat-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px;
+  border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--muted);
+  background: rgba(18, 22, 31, .65); border: 1px solid var(--border);
+}
+.bm-stat-chip strong { color: var(--text); font-weight: 700; }
+
+/* ================= SHARED PANEL STYLING ================= */
+.bm-panel {
+  position: relative; padding: 26px;
+  background: rgba(15, 18, 26, 0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+  border: 1px solid var(--border); border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.bm-panel-head {
+  position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  padding: 18px 22px; margin-bottom: 24px; overflow: hidden;
+  background: linear-gradient(120deg, rgba(28, 34, 48, .72), rgba(20, 24, 34, .65));
+  border: 1px solid rgba(107,208,255,.18); border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.bm-panel-head::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.05), transparent);
+  animation: bm-sheen 7.5s ease-in-out infinite; pointer-events: none; will-change: transform;
+}
+.bm-panel-title-wrap { display: flex; align-items: center; gap: 15px; }
+.bm-panel-logo { width: 46px; height: auto; flex-shrink: 0; filter: drop-shadow(0 3px 8px rgba(26,116,226,.55)); }
+.bm-panel-title {
+  font-size: 23px; font-weight: 800; line-height: 1.1; letter-spacing: .2px;
+  background: linear-gradient(90deg, var(--light), #fff, var(--light)) 0 0 / 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: bm-text 6s linear infinite;
+}
+.bm-panel-sub { display: block; margin-top: 4px; color: var(--muted); font-size: 13.5px; }
+.bm-panel-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bm-count-pill {
+  padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  color: var(--light); background: rgba(107,208,255,.1); border: 1px solid rgba(107,208,255,.22);
+}
+
+/* ================= 2. GAMES VIEW ================= */
+.bm-toolbar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+  padding: 12px; border-radius: 14px;
+  background: rgba(12, 15, 22, .55); border: 1px solid var(--border);
+}
+.bm-search {
+  flex: 1; min-width: 220px; padding: 11px 14px 11px 42px; color: var(--text);
+  background: rgba(24,28,38,.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238fa3b5' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 14px center / 17px;
+  border: 1px solid var(--border); border-radius: 10px; font: 500 15px 'Outfit', sans-serif;
+  transition: border-color .25s ease, box-shadow .25s ease, background-color .25s ease;
+}
+.bm-search::placeholder { color: var(--muted); }
+.bm-search:focus { border-color: var(--mid); background-color: rgba(28,33,46,.95); box-shadow: 0 0 0 3px rgba(63,160,239,.2); outline: none; }
+.bm-size { display: flex; align-items: center; gap: 10px; padding: 0 6px; color: var(--muted); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.bm-range {
+  -webkit-appearance: none; appearance: none; width: 128px; height: 6px; border-radius: 6px; cursor: pointer;
+  background: linear-gradient(90deg, var(--blue), var(--light) var(--fill, 40%), rgba(148,178,214,.2) var(--fill, 40%));
+}
+.bm-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; border: 3.5px solid var(--blue); box-shadow: 0 0 12px rgba(107,208,255,.75);
+  transition: transform .2s var(--ease);
+}
+.bm-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.bm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3.5px solid var(--blue); }
+
+.bm-btn {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 17px; color: var(--text); background: var(--surface-solid); border: 1px solid var(--border);
+  border-radius: 10px; font: 600 14px 'Outfit', sans-serif; cursor: pointer; white-space: nowrap;
+  transition: background .2s ease, border-color .2s ease, transform .25s var(--ease), box-shadow .25s ease;
+}
+.bm-btn:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--mid); transform: translateY(-1px); }
+.bm-btn:active:not(:disabled) { transform: scale(.96); }
+.bm-btn:disabled { opacity: .38; cursor: default; }
+.bm-btn.primary {
+  color: #fff; background: linear-gradient(135deg, var(--blue), var(--mid));
+  border-color: rgba(107,208,255,.35); box-shadow: 0 4px 14px rgba(26,116,226,.35);
+}
+.bm-btn.primary:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(26,116,226,.5); border-color: var(--light); }
+
+.bm-featured { margin-bottom: 28px; }
+.bm-slider-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.bm-slider-head h2 { margin: 0; color: var(--light); font-size: 19px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.bm-arrows { display: flex; gap: 8px; }
+.bm-arrow {
+  position: relative; overflow: hidden;
+  width: 36px; height: 36px; display: grid; place-items: center; padding: 0;
+  color: var(--text); background: var(--surface-solid); border: 1px solid var(--border); border-radius: 50%; cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, transform .25s var(--ease);
+}
+.bm-arrow:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--mid); transform: scale(1.06); }
+.bm-arrow:active:not(:disabled) { transform: scale(.94); }
+.bm-arrow:disabled { opacity: .28; cursor: default; }
+.bm-arrow svg { width: 16px; height: 16px; }
+
+.bm-track {
+  display: flex; gap: 14px; padding: 8px 6px 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  scrollbar-width: thin; scrollbar-color: rgba(148,178,214,.25) transparent;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent);
+}
+.bm-track .bm-card { flex: 0 0 182px; scroll-snap-align: start; }
+
+.bm-section-head { position: relative; display: flex; align-items: center; gap: 16px; padding-bottom: 16px; margin-bottom: 14px; }
+.bm-section-head::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; opacity: .75;
+  background: linear-gradient(90deg, transparent, var(--mid), var(--light), var(--mid), transparent);
+}
+.bm-section-head h2 { margin: 0; flex-shrink: 0; color: var(--light); font-size: 19px; font-weight: 700; }
+.bm-section-head h2.swap { animation: bm-heading .38s var(--ease); }
+.bm-divider { width: 1px; align-self: stretch; background: var(--border); flex-shrink: 0; }
+
+.bm-tabs {
+  position: relative; display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0;
+  overflow-x: auto; scrollbar-width: none; padding: 5px;
+  background: rgba(10,12,18,.55); border: 1px solid var(--border); border-radius: 999px;
+}
+.bm-tabs::-webkit-scrollbar { display: none; }
+.bm-pill {
+  position: relative; z-index: 1; overflow: hidden; flex-shrink: 0; padding: 8px 16px; color: var(--muted);
+  background: transparent; border: 0; border-radius: 999px; font: 600 13.5px 'Outfit', sans-serif;
+  cursor: pointer; transition: color .25s ease, transform .2s var(--ease); white-space: nowrap;
+}
+.bm-pill:hover { color: var(--text); }
+.bm-pill:active { transform: scale(.96); }
+.bm-pill[aria-selected="true"] { color: #fff; }
+
+.bm-glider {
+  position: absolute; z-index: 0; top: 5px; bottom: 5px; left: 0; width: 0; border-radius: 999px;
+  opacity: 0; pointer-events: none; will-change: transform, width;
+  background: linear-gradient(135deg, var(--blue), var(--mid) 65%, var(--light));
+  box-shadow: 0 4px 16px rgba(26,116,226,.55), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.bm-glider.ready { opacity: 1; transition: transform .48s var(--ease), width .48s var(--ease), opacity .25s ease; }
+.bm-glider.ready.off { opacity: 0; }
+
+.bm-more-wrap { position: relative; flex-shrink: 0; }
+.bm-more {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 8px 7px 16px; color: var(--text);
+  background: rgba(10,12,18,.55); border: 1px solid var(--border); border-radius: 999px;
+  font: 600 13.5px 'Outfit', sans-serif; cursor: pointer;
+  transition: border-color .25s ease, box-shadow .25s ease, transform .2s var(--ease);
+}
+.bm-more:hover { border-color: var(--mid); }
+.bm-more:active { transform: scale(.96); }
+.bm-more.active { border-color: var(--light); box-shadow: 0 0 0 3px rgba(26,116,226,.22); }
+.bm-badge { min-width: 26px; padding: 3px 8px; text-align: center; color: #fff; background: linear-gradient(135deg, var(--blue), var(--light)); border-radius: 999px; font-size: 12px; font-weight: 700; }
+
+.bm-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 30;
+  width: 240px; max-height: 320px; overflow-y: auto; padding: 8px;
+  background: var(--surface-solid); border: 1px solid var(--border-bright); border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(0,0,0,.62);
+  animation: bm-drop .28s var(--ease) both;
+}
+.bm-menu button {
+  position: relative; overflow: hidden;
+  display: block; width: 100%; padding: 9px 12px; text-align: left; color: var(--text);
+  background: transparent; border: 0; border-radius: 8px; font: 500 14px 'Outfit', sans-serif;
+  cursor: pointer; transition: background .18s ease, color .18s ease;
+}
+.bm-menu button:hover { background: var(--surface-hover); }
+.bm-menu button[aria-selected="true"] { color: var(--light); background: rgba(26,116,226,.2); }
+
+.bm-status {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 20px; margin: 0 2px 16px;
+  color: var(--muted); font-size: 13px; font-weight: 500;
+}
+.bm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--tile), 100%), 1fr)); gap: 15px; min-height: 240px; align-content: start; }
+
+/* Card */
+.bm-card {
+  position: relative; display: flex; flex-direction: column; padding: 0; text-align: left; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; font-family: inherit;
+  transform: perspective(900px) translate3d(0, 0, 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  animation: bm-rise .48s var(--ease) backwards;
+  animation-delay: calc(min(var(--i, 0), 14) * 24ms);
+  transition: transform .42s var(--ease), background .25s ease, border-color .25s ease, box-shadow .35s var(--ease);
+  will-change: transform;
+}
+.bm-card.is-tilting {
+  transition: border-color .2s ease, box-shadow .25s ease;
+}
+.bm-card:hover {
+  transform: perspective(900px) translate3d(0, -6px, 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  background: var(--surface-hover); border-color: var(--light);
+  box-shadow: 0 16px 34px rgba(26,116,226,.32), 0 0 0 1px rgba(107,208,255,.25);
+}
+.bm-card:active { transform: perspective(900px) scale(.97); }
+.bm-card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,.18), transparent 56%);
+  transition: opacity .3s ease;
+}
+.bm-card:hover::after { opacity: 1; }
+
+.bm-thumbwrap { position: relative; overflow: hidden; aspect-ratio: 1 / 1; background: #10131c; }
+.bm-thumb { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--ease); will-change: transform; }
+.bm-card:hover .bm-thumb { transform: scale(1.07); }
+.bm-play-ov {
+  position: absolute; inset: 0; display: grid; place-items: center; opacity: 0;
+  transition: opacity .28s ease;
+  background: linear-gradient(to top, rgba(8,14,30,.78), rgba(8,14,30,.12) 65%);
+}
+.bm-play-ov i {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--blue), var(--mid));
+  box-shadow: 0 8px 22px rgba(26,116,226,.65);
+  transform: scale(.65); transition: transform .36s var(--ease);
+}
+.bm-play-ov svg { width: 18px; height: 18px; margin-left: 2px; }
+.bm-card:hover .bm-play-ov, .bm-card:focus-visible .bm-play-ov { opacity: 1; }
+.bm-card:hover .bm-play-ov i, .bm-card:focus-visible .bm-play-ov i { transform: scale(1); }
+
+.bm-meta { padding: 11px 13px 13px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bm-name { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bm-cat { color: var(--muted); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.bm-skel { aspect-ratio: 1 / 1.24; border: 1px solid var(--border); border-radius: 14px; background: linear-gradient(105deg, rgba(24,28,38,.8) 30%, rgba(40,48,64,.85) 50%, rgba(24,28,38,.8) 70%); background-size: 250% 100%; animation: bm-shimmer 1.4s ease-in-out infinite; }
+.bm-pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 24px; color: var(--muted); font-size: 14px; font-weight: 500; }
+.bm-msg { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 54px 20px; text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: 14px; }
+.bm-msg h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--light); }
+.bm-msg.error h3 { color: var(--danger); }
+.bm-msg p { margin: 0; max-width: 44ch; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+/* ================= 3. PROXIES VIEW (NO DESCRIPTIONS, COMPACT NEAT SPACING) ================= */
+.bm-subhead { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; margin: 0 0 20px; }
+.bm-subhead::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; opacity: .7; background: linear-gradient(90deg, transparent, var(--mid), var(--light), var(--mid), transparent); }
+.bm-subhead h2 { margin: 0; color: var(--light); font-size: 18px; font-weight: 700; }
+.bm-subhead span { color: var(--muted); font-size: 13px; }
+.bm-proxy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+
+.bm-proxy-card {
+  --a: #1a74e2; --b: #6bd0ff; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 28px 24px 26px; text-align: center; overflow: hidden;
+  background: linear-gradient(180deg, rgba(31, 37, 50, .82), rgba(18, 22, 31, .92));
+  border: 1px solid var(--border); border-radius: 18px;
+  transform: perspective(900px) translate3d(0, 0, 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  animation: bm-rise .48s var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+  transition: transform .42s var(--ease), border-color .25s ease, box-shadow .35s var(--ease);
+  will-change: transform;
+}
+.bm-proxy-card.is-tilting { transition: border-color .2s ease, box-shadow .25s ease; }
+.bm-proxy-card:nth-child(3n+2) { --a: #4f46e5; --b: #3fa0ef; }
+.bm-proxy-card:nth-child(3n+3) { --a: #0284c7; --b: #6bd0ff; }
+.bm-proxy-card:hover {
+  transform: perspective(900px) translate3d(0, -7px, 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  border-color: var(--light);
+  box-shadow: 0 20px 42px rgba(26,116,226,.3), 0 0 0 1px rgba(107,208,255,.22);
+}
+.bm-proxy-card::before { content: ""; position: absolute; top: 0; left: 14%; right: 14%; height: 2px; background: linear-gradient(90deg, transparent, var(--b), transparent); opacity: .85; }
+.bm-proxy-card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,.14), transparent 55%); transition: opacity .3s ease; }
+.bm-proxy-card:hover::after { opacity: 1; }
+
+.bm-mark {
+  width: 64px; height: 64px; display: grid; place-items: center; margin-bottom: 2px;
+  color: #fff; font-size: 26px; font-weight: 800;
+  background: linear-gradient(135deg, var(--a), var(--b)); border-radius: 18px;
+  box-shadow: 0 10px 26px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.35);
+  transition: transform .4s var(--ease);
+}
+.bm-proxy-card:hover .bm-mark { transform: scale(1.07) rotate(-2deg); }
+.bm-proxy-card h3 { margin: 0; color: var(--text); font-size: 22px; font-weight: 800; }
+.bm-proxy-domain {
+  padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  color: var(--light); background: rgba(107,208,255,.08); border: 1px solid rgba(107,208,255,.18);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bm-remove-proxy {
+  position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; overflow: hidden;
+  border: 1px solid var(--border); background: rgba(15,18,24,.85); color: var(--muted);
+  cursor: pointer; display: grid; place-items: center; font-size: 16px;
+  transition: color .2s ease, border-color .2s ease, transform .25s var(--ease);
+}
+.bm-remove-proxy:hover { color: var(--danger); border-color: var(--danger); transform: scale(1.1); }
+.bm-play-link {
+  position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 8px; padding: 11px 24px; margin-top: 6px;
+  color: #061426; font: 700 14.5px 'Outfit', sans-serif; text-decoration: none;
+  background: linear-gradient(135deg, var(--light), var(--mid)); border: 0; cursor: pointer;
+  border-radius: 11px; box-shadow: 0 4px 0 #0b3f85, 0 8px 20px rgba(26,116,226,.3);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.bm-play-link:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #0b3f85, 0 12px 24px rgba(26,116,226,.45); }
+.bm-play-link:active { transform: translateY(2px); box-shadow: 0 2px 0 #0b3f85; }
+.bm-play-link svg { width: 16px; height: 16px; transition: transform .25s var(--ease); }
+.bm-play-link:hover svg { transform: translateX(3px); }
+
+/* ================= EMBED GAME PLAYER MODAL ================= */
+.bm-player-modal {
+  position: fixed; inset: 0; z-index: 120; display: flex; flex-direction: column;
+  background: rgba(6, 8, 13, .95); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  animation: bm-fade-in .25s var(--ease) both;
+}
+.bm-player-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 18px; background: #111520; border-bottom: 1px solid var(--border); }
+.bm-player-title { font-size: 16px; font-weight: 700; color: var(--light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bm-player-btns { display: flex; align-items: center; gap: 8px; }
+.bm-player-frame { flex: 1; width: 100%; border: 0; background: #000; }
+
+/* ================= MODALS ================= */
+.bm-modal-backdrop {
+  position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 20px;
+  background: rgba(5, 7, 12, .76); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  animation: bm-fade-in .22s ease both;
+}
+.bm-modal {
+  width: 100%; max-width: 440px; padding: 26px; background: var(--surface-solid);
+  border: 1px solid rgba(107,208,255,.26); border-radius: 18px;
+  box-shadow: 0 28px 68px rgba(0,0,0,.65);
+  animation: bm-pop .34s var(--ease) both;
+}
+.bm-modal h3 { margin: 0 0 6px; font-size: 21px; font-weight: 800; color: var(--light); }
+.bm-modal p { margin: 0 0 18px; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+.bm-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.bm-field label { font-size: 13px; font-weight: 600; color: var(--text); }
+.bm-input {
+  padding: 11px 13px; color: var(--text); background: #0d1017; border: 1px solid var(--border);
+  border-radius: 10px; font: 500 14px 'Outfit', sans-serif; transition: border-color .2s ease, box-shadow .2s ease;
+}
+.bm-input:focus { outline: none; border-color: var(--mid); box-shadow: 0 0 0 3px rgba(63,160,239,.18); }
+.bm-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* ================= KEYFRAMES & RESPONSIVE ================= */
+@keyframes bm-view-in { from { opacity: 0; transform: translate3d(0, 14px, 0) scale(.99); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes bm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bm-grid    { to { transform: translate3d(52px, 52px, 0); } }
+@keyframes bm-d1      { to { transform: translate3d(140px, 100px, 0) scale(1.16); } }
+@keyframes bm-d2      { to { transform: translate3d(-150px, -80px, 0) scale(.88); } }
+@keyframes bm-d3      { to { transform: translate3d(-190px, -50px, 0) scale(1.12); } }
+@keyframes bm-wave    { from { transform: translate3d(0, -16px, 0) scaleY(.9); } to { transform: translate3d(0, 16px, 0) scaleY(1.1); } }
+@keyframes bm-floor   { to { background-position: 0 60px; } }
+@keyframes bm-float   { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 15% { opacity: .9; } 100% { transform: translate3d(40px, -1000px, 0); opacity: 0; } }
+@keyframes bm-spin    { to { transform: rotate(360deg); } }
+@keyframes bm-pulse   { 0%, 100% { transform: scale(.88); opacity: .58; } 50% { transform: scale(1.16); opacity: .95; } }
+@keyframes bm-text    { to { background-position: -250% 0; } }
+@keyframes bm-sheen   { 0%, 60% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(380%, 0, 0); } }
+@keyframes bm-bob     { 50% { transform: translate3d(0, -7px, 0); } }
+@keyframes bm-pop     { from { opacity: 0; transform: scale(.86) translate3d(0, 10px, 0); } to { opacity: 1; transform: scale(1) translate3d(0, 0, 0); } }
+@keyframes bm-drop    { from { opacity: 0; transform: translate3d(0, -10px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes bm-rise    { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes bm-heading { from { opacity: 0; transform: translate3d(-8px, 0, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes bm-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes bm-ripple-anim { to { transform: translate3d(-50%, -50%, 0) scale(2.6); opacity: 0; } }
+@keyframes bm-ring-pop { to { transform: translate3d(-50%, -50%, 0) scale(1.85); opacity: 0; } }
+@keyframes bm-spark-burst {
+  0%   { transform: translate3d(-50%, -50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate3d(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px)), 0) scale(.2); opacity: 0; }
+}
+
+@media (max-width: 720px) {
+  .bm-nav { padding: 10px 12px; justify-content: center; }
+  .bm-brand { display: none; }
+  .bm-views { padding: 12px; }
+  .bm-panel { padding: 16px; border-radius: 18px; }
+  .bm-size { display: none; }
+  .bm-section-head { flex-wrap: wrap; gap: 10px; }
+  .bm-divider { display: none; }
+  .bm-tabs { order: 3; flex-basis: 100%; }
+  .bm-more-wrap { margin-left: auto; }
+  .bm-track .bm-card { flex-basis: 148px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="bm-app" id="bm-app">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="bm-grad-l" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6bd0ff"/><stop offset="1" stop-color="#1a74e2"/>
+      </linearGradient>
+      <linearGradient id="bm-grad-r" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#1a74e2"/><stop offset="1" stop-color="#3fa0ef"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="bm-bg" id="bm-bg" aria-hidden="true">
+    <div class="bm-par">
+      <span class="bm-blob b1"></span><span class="bm-blob b2"></span><span class="bm-blob b3"></span><span class="bm-blob b4"></span>
+    </div>
+  </div>
+
+  <!-- Top Navigation -->
+  <header class="bm-nav">
+    <button class="bm-brand" id="bm-brand-btn" type="button">
+      <svg viewBox="0 0 120 100" aria-hidden="true">
+        <path d="M60 26 C46 15 28 15 8 21 L8 82 C28 76 46 76 60 87 Z" fill="url(#bm-grad-l)"/>
+        <path d="M60 26 C74 15 92 15 112 21 L112 82 C92 76 74 76 60 87 Z" fill="url(#bm-grad-r)"/>
+        <path d="M82 15 L102 18 L102 64 L92 55 L82 64 Z" fill="#6bd0ff"/>
+      </svg>
+      <div><b>Book</b><span>mark</span></div>
+    </button>
+
+    <div class="bm-nav-right">
+      <nav class="bm-nav-tabs" id="bm-nav-tabs" role="tablist" aria-label="Main views">
+        <span class="bm-nav-glider" id="bm-nav-glider" aria-hidden="true"></span>
+        <button class="bm-nav-tab" type="button" role="tab" data-view="home" aria-selected="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          Home
+        </button>
+        <button class="bm-nav-tab" type="button" role="tab" data-view="games" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg>
+          Games
+        </button>
+        <button class="bm-nav-tab" type="button" role="tab" data-view="proxies" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a14 14 0 0 0 0 18M12 3a14 14 0 0 1 0 18"/></svg>
+          Proxies
+        </button>
+      </nav>
+
+      <button class="bm-sfx-btn" id="bm-sfx-toggle" type="button" aria-pressed="true" title="Toggle UI sound effects">
+        <svg id="bm-sfx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <span id="bm-sfx-label">Sound On</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="bm-views">
+
+    <!-- ========== TAB 1: HOME ========== -->
+    <section class="bm-view bm-hero-view" id="view-home" role="tabpanel">
+      <svg class="bm-waves" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">
+        <path class="bm-wave w1" d="M-20 520 C230 470 420 450 600 360 C760 280 880 200 1020 170"/>
+        <path class="bm-wave w2" d="M-20 560 C250 520 450 500 640 410 C800 330 900 270 1020 240"/>
+        <path class="bm-wave w3" d="M-20 470 C210 420 400 400 580 310 C750 225 870 150 1020 110"/>
+      </svg>
+      <div class="bm-floor" aria-hidden="true"></div>
+      <div class="bm-vignette" aria-hidden="true"></div>
+
+      <div class="bm-hero">
+        <div class="bm-stage">
+          <span class="bm-glow"></span>
+          <span class="bm-ring r3"></span>
+          <span class="bm-ring r1"><i></i></span>
+          <span class="bm-ring r2"></span>
+          <svg class="bm-hero-logo" viewBox="0 0 120 100" role="img" aria-label="Bookmark logo">
+            <path d="M60 26 C46 15 28 15 8 21 L8 82 C28 76 46 76 60 87 Z" fill="url(#bm-grad-l)"/>
+            <path d="M60 26 C74 15 92 15 112 21 L112 82 C92 76 74 76 60 87 Z" fill="url(#bm-grad-r)"/>
+            <path d="M20 36 C30 34 40 35 50 40 M20 48 C30 46 40 47 50 52 M20 60 C30 58 40 59 50 64" stroke="#101010" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"/>
+            <path class="bm-ribbon" d="M82 15 L102 18 L102 64 L92 55 L82 64 Z" fill="#6bd0ff"/>
+          </svg>
+        </div>
+
+        <div class="bm-hero-pill"><i></i> Instant Browser Hub</div>
+        <h1 class="bm-hero-title"><b>Book</b><span>mark</span></h1>
+        <p class="bm-tag">Games and web proxies.</p>
+
+        <div class="bm-hero-cta">
+          <button class="bm-cta-pill" type="button" data-go="games">
+            <span>Go to Games <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="bm-cta-secondary" type="button" data-go="proxies">
+            Go to Proxies <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <div class="bm-hero-stats">
+          <span class="bm-stat-chip"><strong>11+</strong> Genres</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== TAB 2: GAMES ========== -->
+    <section class="bm-view bm-panel" id="view-games" role="tabpanel" hidden>
+      <div class="bm-panel-head">
+        <div class="bm-panel-title-wrap">
+          <svg class="bm-panel-logo" viewBox="0 0 120 100" aria-hidden="true">
+            <path d="M60 26 C46 15 28 15 8 21 L8 82 C28 76 46 76 60 87 Z" fill="url(#bm-grad-l)"/>
+            <path d="M60 26 C74 15 92 15 112 21 L112 82 C92 76 74 76 60 87 Z" fill="url(#bm-grad-r)"/>
+            <path d="M82 15 L102 18 L102 64 L92 55 L82 64 Z" fill="#6bd0ff"/>
+          </svg>
+          <div>
+            <div class="bm-panel-title">Game Library</div>
+            <span class="bm-panel-sub">Browse by genre, search instantly, and launch in full screen</span>
+          </div>
+        </div>
+        <div class="bm-panel-actions">
+          <span class="bm-count-pill" id="bm-total-pill">Loading catalog…</span>
+        </div>
+      </div>
+
+      <div class="bm-toolbar">
+        <input class="bm-search" id="bm-search" type="search" placeholder="Search games by title…" aria-label="Search games" autocomplete="off">
+        <label class="bm-size">Tile size
+          <input class="bm-range" id="bm-size" type="range" min="110" max="260" step="10" value="158" aria-label="Tile size">
+        </label>
+        <button class="bm-btn primary" id="bm-random" type="button">Shuffle picks</button>
+      </div>
+
+      <div class="bm-featured" id="bm-featured" hidden>
+        <div class="bm-slider-head">
+          <h2>Featured picks</h2>
+          <div class="bm-arrows">
+            <button class="bm-arrow" id="bm-left" type="button" aria-label="Scroll left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <button class="bm-arrow" id="bm-right" type="button" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+          </div>
+        </div>
+        <div class="bm-track" id="bm-track" tabindex="0" aria-label="Featured games"></div>
+      </div>
+
+      <div class="bm-section-head">
+        <h2 id="bm-heading">Explore Games</h2>
+        <span class="bm-divider" aria-hidden="true"></span>
+        <div class="bm-tabs" id="bm-tabs" role="tablist" aria-label="Game categories" hidden></div>
+        <div class="bm-more-wrap" id="bm-more-wrap" hidden>
+          <button class="bm-more" id="bm-more" type="button" aria-haspopup="true" aria-expanded="false"><span>MORE</span><span class="bm-badge" id="bm-badge">0</span></button>
+          <div class="bm-menu" id="bm-menu" role="tablist" aria-label="More categories" hidden></div>
+        </div>
+      </div>
+
+      <div class="bm-status" id="bm-status" role="status" aria-live="polite">Loading games…</div>
+      <div class="bm-grid" id="bm-grid" role="tabpanel" aria-busy="true"></div>
+      <div class="bm-pager" id="bm-pager" hidden>
+        <button class="bm-btn" id="bm-prev" type="button">Previous</button>
+        <span id="bm-page"></span>
+        <button class="bm-btn" id="bm-next" type="button">Next</button>
+      </div>
+    </section>
+
+    <!-- ========== TAB 3: PROXIES ========== -->
+    <section class="bm-view bm-panel" id="view-proxies" role="tabpanel" hidden>
+      <div class="bm-panel-head">
+        <div class="bm-panel-title-wrap">
+          <svg class="bm-panel-logo" viewBox="0 0 120 100" aria-hidden="true">
+            <path d="M60 26 C46 15 28 15 8 21 L8 82 C28 76 46 76 60 87 Z" fill="url(#bm-grad-l)"/>
+            <path d="M60 26 C74 15 92 15 112 21 L112 82 C92 76 74 76 60 87 Z" fill="url(#bm-grad-r)"/>
+            <path d="M82 15 L102 18 L102 64 L92 55 L82 64 Z" fill="#6bd0ff"/>
+          </svg>
+          <div>
+            <div class="bm-panel-title">Proxies</div>
+            <span class="bm-panel-sub">Fast web portals and your saved custom sites</span>
+          </div>
+        </div>
+        <div class="bm-panel-actions">
+          <span class="bm-count-pill" id="bm-proxy-count">3 Sites</span>
+          <button class="bm-btn primary" id="bm-add-proxy-btn" type="button">+ Add Site</button>
+        </div>
+      </div>
+
+      <div class="bm-subhead">
+        <h2>Available Portals</h2>
+        <span>Each portal opens cleanly in a new tab</span>
+      </div>
+      <div class="bm-proxy-grid" id="bm-proxy-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- IFRAME GAME PLAYER MODAL -->
+  <div class="bm-player-modal" id="bm-player-modal" hidden>
+    <div class="bm-player-bar">
+      <div class="bm-player-title" id="bm-player-title">Playing Game</div>
+      <div class="bm-player-btns">
+        <a class="bm-btn" id="bm-player-newtab" href="#" target="_blank" rel="noopener noreferrer" style="text-decoration:none">Open in New Tab</a>
+        <button class="bm-btn" id="bm-player-fs" type="button">Fullscreen</button>
+        <button class="bm-btn primary" id="bm-player-close" type="button">Close</button>
+      </div>
+    </div>
+    <iframe class="bm-player-frame" id="bm-player-frame" allowfullscreen allow="autoplay; fullscreen; gamepad"></iframe>
+  </div>
+
+  <!-- ADD CUSTOM PROXY MODAL -->
+  <div class="bm-modal-backdrop" id="bm-proxy-modal" hidden>
+    <div class="bm-modal" role="dialog" aria-modal="true" aria-labelledby="bm-proxy-modal-title">
+      <h3 id="bm-proxy-modal-title">Add Custom Site</h3>
+      <p>Bookmark another proxy or portal to your list.</p>
+      <div class="bm-field"><label for="bm-proxy-name">Site Name</label><input class="bm-input" id="bm-proxy-name" type="text" placeholder="e.g. Nebula"></div>
+      <div class="bm-field"><label for="bm-proxy-url">URL</label><input class="bm-input" id="bm-proxy-url" type="url" placeholder="https://example.com"></div>
+      <div class="bm-modal-actions">
+        <button class="bm-btn" id="bm-proxy-close" type="button">Cancel</button>
+        <button class="bm-btn primary" id="bm-proxy-save" type="button">Save Site</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js" onerror="window.__bmSdkFailed = true"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var app = $('bm-app');
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function readStore(key, fallback) {
+    try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+    catch (e) { return fallback; }
+  }
+  function writeStore(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+
+  /* ================================================================
+     CLEAN WEB AUDIO SFX ENGINE + VISUAL CLICK EFFECTS
+     ================================================================ */
+  var sfxEnabled = readStore('bm_sfx_enabled', true);
+  var audioCtx = null;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(function () {});
+    }
+    return audioCtx;
+  }
+
+  function playNote(ctx, freq, endFreq, dur, vol, type, delay) {
+    var t0 = ctx.currentTime + (delay || 0);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(3200, t0);
+
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    if (endFreq && endFreq !== freq) {
+      osc.frequency.exponentialRampToValueAtTime(endFreq, t0 + dur);
+    }
+
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.01);
+  }
+
+  function playUiSound(kind) {
+    if (!sfxEnabled) return;
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    try {
+      if (kind === 'tab') {
+        playNote(ctx, 500, 660, 0.055, 0.065, 'sine', 0);
+        playNote(ctx, 1000, 1320, 0.04, 0.018, 'sine', 0);
+      } else if (kind === 'launch') {
+        playNote(ctx, 523.25, 523.25, 0.08, 0.055, 'sine', 0);
+        playNote(ctx, 783.99, 783.99, 0.13, 0.06, 'sine', 0.045);
+      } else if (kind === 'close') {
+        playNote(ctx, 440, 260, 0.065, 0.055, 'sine', 0);
+      } else {
+        playNote(ctx, 620, 390, 0.048, 0.06, 'sine', 0);
+        playNote(ctx, 1240, 780, 0.03, 0.016, 'triangle', 0);
+      }
+    } catch (e) {}
+  }
+
+  function spawnRipple(target, clientX, clientY) {
+    if (calm || !target) return;
+    var host = target.classList.contains('bm-cta-pill') ? target.querySelector('span') : target;
+    if (!host) return;
+    var r = host.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    var x = (clientX != null && clientX > 0) ? (clientX - r.left) : (r.width / 2);
+    var y = (clientY != null && clientY > 0) ? (clientY - r.top) : (r.height / 2);
+    var sz = Math.max(r.width, r.height) * 0.9;
+    var rip = document.createElement('span');
+    rip.className = 'bm-ripple';
+    rip.style.width = sz + 'px';
+    rip.style.height = sz + 'px';
+    rip.style.left = x + 'px';
+    rip.style.top = y + 'px';
+    host.appendChild(rip);
+    setTimeout(function () { if (rip.parentNode) rip.parentNode.removeChild(rip); }, 580);
+  }
+
+  function spawnClickFx(x, y, burst) {
+    if (calm || !x || !y) return;
+    var ring = document.createElement('span');
+    ring.className = 'bm-click-ring';
+    ring.style.left = x + 'px';
+    ring.style.top = y + 'px';
+    document.body.appendChild(ring);
+    setTimeout(function () { if (ring.parentNode) ring.parentNode.removeChild(ring); }, 500);
+
+    if (burst) {
+      for (var i = 0; i < 6; i++) {
+        var ang = (Math.PI * 2 * i) / 6 + (Math.random() - 0.5) * 0.4;
+        var dist = 22 + Math.random() * 18;
+        var sp = document.createElement('span');
+        sp.className = 'bm-click-spark';
+        sp.style.left = x + 'px';
+        sp.style.top = y + 'px';
+        sp.style.setProperty('--tx', Math.cos(ang) * dist + 'px');
+        sp.style.setProperty('--ty', Math.sin(ang) * dist + 'px');
+        document.body.appendChild(sp);
+        (function (node) {
+          setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 540);
+        })(sp);
+      }
+    }
+  }
+
+  var BTN_SEL = '.bm-nav-tab, .bm-cta-pill, .bm-cta-secondary, .bm-btn, .bm-arrow, .bm-pill, .bm-more, .bm-menu button, .bm-card, .bm-play-link, .bm-remove-proxy, .bm-brand, .bm-sfx-btn';
+
+  function getFeedbackKind(el) {
+    if (el.matches('.bm-nav-tab, .bm-pill, .bm-more, .bm-menu button')) return 'tab';
+    if (el.matches('.bm-cta-pill, .bm-cta-secondary, .bm-card, .bm-play-link, #bm-random, #bm-proxy-save')) return 'launch';
+    if (el.matches('.bm-remove-proxy, #bm-player-close, #bm-proxy-close')) return 'close';
+    return 'tap';
+  }
+
+  var lastPtrFx = 0;
+  function triggerUiFeedback(el, cx, cy) {
+    if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return;
+    var kind = getFeedbackKind(el);
+    playUiSound(kind);
+    spawnRipple(el, cx, cy);
+    if (cx && cy) spawnClickFx(cx, cy, kind === 'launch');
+  }
+
+  document.addEventListener('pointerdown', function (e) {
+    if (e.button !== 0) return;
+    var el = e.target.closest(BTN_SEL);
+    if (!el) return;
+    lastPtrFx = performance.now();
+    triggerUiFeedback(el, e.clientX, e.clientY);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (performance.now() - lastPtrFx < 350) return;
+    var el = e.target.closest(BTN_SEL);
+    if (!el) return;
+    var r = el.getBoundingClientRect();
+    triggerUiFeedback(el, r.left + r.width / 2, r.top + r.height / 2);
+  });
+
+  var sfxBtn = $('bm-sfx-toggle'), sfxLabel = $('bm-sfx-label'), sfxIcon = $('bm-sfx-icon');
+  function renderSfxBtn() {
+    sfxBtn.classList.toggle('muted', !sfxEnabled);
+    sfxBtn.setAttribute('aria-pressed', String(sfxEnabled));
+    sfxLabel.textContent = sfxEnabled ? 'Sound On' : 'Muted';
+    sfxIcon.innerHTML = sfxEnabled
+      ? '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>'
+      : '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
+  }
+  sfxBtn.addEventListener('click', function () {
+    sfxEnabled = !sfxEnabled;
+    writeStore('bm_sfx_enabled', sfxEnabled);
+    renderSfxBtn();
+    if (sfxEnabled) playUiSound('tab');
+  });
+  renderSfxBtn();
+
+  /* ---------- SMOOTH LERP PARALLAX & SPARKS ---------- */
+  var bg = $('bm-bg');
+  if (!calm) {
+    for (var i = 0; i < 16; i++) {
+      var sp = document.createElement('span');
+      var sz = (2 + Math.random() * 3) + 'px';
+      sp.className = 'bm-spark';
+      sp.style.left = (Math.random() * 100) + '%';
+      sp.style.width = sp.style.height = sz;
+      sp.style.animationDuration = (8 + Math.random() * 9) + 's';
+      sp.style.animationDelay = (-Math.random() * 14) + 's';
+      bg.appendChild(sp);
+    }
+
+    var targetX = 0, targetY = 0, curX = 0, curY = 0, parRaf = 0;
+    function tickParallax() {
+      curX += (targetX - curX) * 0.1;
+      curY += (targetY - curY) * 0.1;
+      app.style.setProperty('--px', curX.toFixed(2) + 'px');
+      app.style.setProperty('--py', curY.toFixed(2) + 'px');
+      if (Math.abs(targetX - curX) > 0.05 || Math.abs(targetY - curY) > 0.05) {
+        parRaf = requestAnimationFrame(tickParallax);
+      } else {
+        parRaf = 0;
+      }
+    }
+    app.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var r = app.getBoundingClientRect();
+      targetX = ((e.clientX - r.left) / r.width - 0.5) * 34;
+      targetY = ((e.clientY - r.top) / r.height - 0.5) * 34;
+      if (!parRaf) parRaf = requestAnimationFrame(tickParallax);
+    });
+  }
+
+  function attachTilt(card) {
+    if (calm) return;
+    card.addEventListener('pointerenter', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      card.classList.add('is-tilting');
+    });
+    card.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var r = card.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      card.style.setProperty('--ry', ((x - .5) * 9).toFixed(2) + 'deg');
+      card.style.setProperty('--rx', ((.5 - y) * 9).toFixed(2) + 'deg');
+      card.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
+      card.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+    });
+    card.addEventListener('pointerleave', function () {
+      card.classList.remove('is-tilting');
+      card.style.setProperty('--rx', '0deg');
+      card.style.setProperty('--ry', '0deg');
+    });
+  }
+
+  /* ---------- TOP TAB NAVIGATION + SMOOTH GLIDER ---------- */
+  var views = { home: $('view-home'), games: $('view-games'), proxies: $('view-proxies') };
+  var navTabsWrap = $('bm-nav-tabs');
+  var navGlider = $('bm-nav-glider');
+  var navTabs = Array.prototype.slice.call(document.querySelectorAll('.bm-nav-tab'));
+
+  function moveNavGlider() {
+    var active = navTabsWrap.querySelector('.bm-nav-tab[aria-selected="true"]');
+    if (!active || !navGlider) return;
+    navGlider.style.width = active.offsetWidth + 'px';
+    navGlider.style.transform = 'translate3d(' + active.offsetLeft + 'px, 0, 0)';
+    if (!navGlider.classList.contains('ready')) {
+      requestAnimationFrame(function () { navGlider.classList.add('ready'); });
+    }
+  }
+
+  function switchView(name) {
+    if (!views[name]) name = 'home';
+    Object.keys(views).forEach(function (k) { views[k].hidden = (k !== name); });
+    navTabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.view === name)); });
+    moveNavGlider();
+    window.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
+    if (name === 'games') requestAnimationFrame(function () { moveGlider(); updateArrows(); });
+  }
+
+  navTabs.forEach(function (b) { b.addEventListener('click', function () { switchView(b.dataset.view); }); });
+  $('bm-brand-btn').addEventListener('click', function () { switchView('home'); });
+  document.querySelectorAll('[data-go]').forEach(function (b) {
+    b.addEventListener('click', function () { switchView(b.dataset.go); });
+  });
+  window.addEventListener('resize', moveNavGlider);
+  requestAnimationFrame(moveNavGlider);
+
+  /* ---------- PROXIES (NO DESCRIPTIONS + GAMEPOTTY INSTEAD OF XYFER) ---------- */
+  var DEFAULT_PROXIES = [
+    { name: 'Gamepotty', url: 'https://gamepotty.com/', fixed: true },
+    { name: 'Cherri', url: 'https://kicks-shop.com/', fixed: true },
+    { name: 'Kyro', url: 'https://science.chemicalbox.com/', fixed: true }
+  ];
+
+  function extractHost(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ''); }
+    catch (e) { return url; }
+  }
+
+  function renderProxies() {
+    var pGrid = $('bm-proxy-grid');
+    pGrid.innerHTML = '';
+    var custom = readStore('bm_custom_proxies', []);
+    var all = DEFAULT_PROXIES.concat(custom);
+    $('bm-proxy-count').textContent = all.length + (all.length === 1 ? ' Site' : ' Sites');
+
+    all.forEach(function (item, idx) {
+      var card = document.createElement('div');
+      card.className = 'bm-proxy-card';
+      card.style.setProperty('--i', idx);
+      if (!item.fixed) {
+        var rm = document.createElement('button');
+        rm.className = 'bm-remove-proxy'; rm.type = 'button'; rm.textContent = '×';
+        rm.setAttribute('aria-label', 'Remove ' + item.name);
+        rm.addEventListener('click', function () {
+          var next = readStore('bm_custom_proxies', []).filter(function (_, ci) { return ci !== (idx - DEFAULT_PROXIES.length); });
+          writeStore('bm_custom_proxies', next); renderProxies();
+        });
+        card.appendChild(rm);
+      }
+      var mark = document.createElement('div'); mark.className = 'bm-mark'; mark.textContent = (item.name || '?').charAt(0).toUpperCase();
+      var h3 = document.createElement('h3'); h3.textContent = item.name;
+      var dom = document.createElement('span'); dom.className = 'bm-proxy-domain'; dom.textContent = extractHost(item.url);
+      var a = document.createElement('a'); a.className = 'bm-play-link'; a.href = item.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.innerHTML = 'Open Portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      card.appendChild(mark); card.appendChild(h3); card.appendChild(dom); card.appendChild(a);
+      attachTilt(card); pGrid.appendChild(card);
+    });
+  }
+  renderProxies();
+
+  var proxyModal = $('bm-proxy-modal');
+  $('bm-add-proxy-btn').addEventListener('click', function () {
+    $('bm-proxy-name').value = ''; $('bm-proxy-url').value = '';
+    proxyModal.hidden = false; $('bm-proxy-name').focus();
+  });
+  $('bm-proxy-close').addEventListener('click', function () { proxyModal.hidden = true; });
+  proxyModal.addEventListener('click', function (e) { if (e.target === proxyModal) proxyModal.hidden = true; });
+  $('bm-proxy-save').addEventListener('click', function () {
+    var name = $('bm-proxy-name').value.trim(), url = $('bm-proxy-url').value.trim();
+    if (!name || !url) return;
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    var list = readStore('bm_custom_proxies', []);
+    list.push({ name: name, url: url });
+    writeStore('bm_custom_proxies', list);
+    proxyModal.hidden = true; renderProxies();
+  });
+
+  /* ================================================================
+     GAMES LIBRARY
+     ================================================================ */
+  var EXTRA_EMBEDS = [
+    { id: 'ex-slope', name: 'Slope', category: 'Endless Runner', imageUrl: 'https://cdn2.y8.com/cloudimage/384903/file/w380h285_webp-847438dbbb3cc166019d693507ac4972.webp', embedUrl: 'https://y8.com/embed/slope' },
+    { id: 'ex-flappy', name: 'Flappy Bird', category: 'Endless Runner', imageUrl: 'https://funhtml5games.com/images/birdflap3.jpg', embedUrl: 'https://funhtml5games.com?embed=flappy' },
+    { id: 'ex-space-invaders', name: 'Space Invaders', category: 'Action & Shooter', imageUrl: 'https://funhtml5games.com/images/spaceinvaders.jpg', embedUrl: 'https://funhtml5games.com?embed=spaceinvaders' },
+    { id: 'ex-frogger', name: 'Frogger', category: 'Arcade & Classic', imageUrl: 'https://funhtml5games.com/images/frogger.jpg', embedUrl: 'https://funhtml5games.com?embed=frogger' },
+    { id: 'ex-pacman', name: 'Pacman', category: 'Arcade & Classic', imageUrl: 'https://funhtml5games.com/images/pacman.jpg', embedUrl: 'https://funhtml5games.com?embed=pacman' },
+    { id: 'ex-fruit-ninja', name: 'Fruit Ninja: Halloween', category: 'Arcade & Classic', imageUrl: 'https://funhtml5games.com/images/fruitninja-halloween.jpg', embedUrl: 'https://funhtml5games.com?embed=fruitninja-halloween' },
+    { id: 'ex-sonic-mario', name: 'Sonic Mario Bros', category: 'Platformer & Rhythm', imageUrl: 'https://funhtml5games.com/images/fbthumbs/sonicmario3.png', embedUrl: 'https://funhtml5games.com?embed=sonicmario' },
+    { id: 'ex-tetris', name: 'Tetris', category: 'Puzzle', imageUrl: 'https://funhtml5games.com/images/tetris.jpg', embedUrl: 'https://funhtml5games.com?embed=tetris' },
+    { id: 'ex-lemmings', name: 'Lemmings', category: 'Puzzle', imageUrl: 'https://funhtml5games.com/images/lemming.png', embedUrl: 'https://funhtml5games.com?embed=lemmings' },
+    { id: 'ex-animals-connect', name: 'Animals Connect', category: 'Puzzle', imageUrl: 'https://cdn.htmlgames.com/AnimalsConnect/img/icon/image-300x200.jpg', embedUrl: 'https://cdn.htmlgames.com/AnimalsConnect/index.html' },
+    { id: 'ex-sushi-mahjong', name: 'Sushi Mahjong', category: 'Puzzle', imageUrl: 'https://cdn.htmlgames.com/SushiMahjong/img/loading.png', embedUrl: 'https://cdn.htmlgames.com/SushiMahjong/index.html' },
+    { id: 'ex-jolly-jong', name: 'Jolly Jong Blitz', category: 'Puzzle', imageUrl: 'https://cdn.htmlgames.com/JollyJongBlitz2/img/icon/image-300x200.jpg', embedUrl: 'https://cdn.htmlgames.com/JollyJongBlitz2/index.html' },
+    { id: 'ex-classic-chess', name: 'Classic Chess', category: 'Board & Card', imageUrl: 'https://cdn.htmlgames.com/Chess/img/title.png', embedUrl: 'https://cdn.htmlgames.com/Chess/index.html' },
+    { id: 'ex-planet-solitaire', name: 'Planet Solitaire', category: 'Board & Card', imageUrl: 'https://cdn.htmlgames.com/PlanetSolitaire/img/menu_back.jpg', embedUrl: 'https://cdn.htmlgames.com/PlanetSolitaire/index.html' },
+    { id: 'ex-hotel-escape', name: 'Hotel Escape', category: 'Horror & Escape', imageUrl: 'https://cdn.htmlgames.com/EscapeRoom-HotelEscape/img/loading.png', embedUrl: 'https://cdn.htmlgames.com/EscapeRoom-HotelEscape/index.html' },
+    { id: 'ex-minicraft', name: 'Minicraft', category: 'Adventure & Sandbox', imageUrl: 'https://funhtml5games.com/images/minicraft.jpg', embedUrl: 'https://funhtml5games.com?embed=minicraft' }
+  ];
+
+  var GENRE_TABS = [
+    'Action & Shooter', 'Sports', 'Endless Runner', 'Racing & Driving',
+    'Platformer & Rhythm', 'Arcade & Classic', 'Puzzle', 'Board & Card',
+    'Clicker & Idle', 'Horror & Escape', 'Adventure & Sandbox'
+  ];
+
+  var EXACT_GENRE_RULES = [
+    { rx: /\b(basketball stars|basket random|basket bros|retro bowl|football legends|soccer|world cup|boxing|volley|baseball|tennis|golf|bowling|hockey|wrestle)\b/i, cat: 'Sports' },
+    { rx: /\b(1v1\.?lol|shell shockers|krunker|bullet force|getaway shootout|time shooter|pixel shooter|gunspin|ragdoll archers|rooftop snipers|doom|space invaders|awesome tanks|counter|sniper|combat|zombie|warfare|fortzone|brawl)\b/i, cat: 'Action & Shooter' },
+    { rx: /\b(slope|subway surfers|run 3|temple run|crossy road|tunnel rush|flappy|extreme run|dinosaur|dino run|canabalt|jetpack)\b/i, cat: 'Endless Runner' },
+    { rx: /\b(moto x3m|drift hunters|snow rider|drive mad|polytrack|eggy car|smash karts|crazy cars|hill climb|madalin|stunt cars|racing|racer|truck|car|kart|bike|driver|taxi)\b/i, cat: 'Racing & Driving' },
+    { rx: /\b(geometry dash|vex|clusterrush|dreadhead|parkour|fireboy|watergirl|sonic|mario|big tower|tiny square|stickman hook|getting over it|a dance of fire|friday night)\b/i, cat: 'Platformer & Rhythm' },
+    { rx: /\b(chess|solitaire|uno|checkers|poker|blackjack|mahjong|jolly jong|connect|board|card|domino)\b/i, cat: 'Board & Card' },
+    { rx: /\b(cookie clicker|clicker|idle|monkey mart|tycoon|burger clicker|case clicker|mining empire)\b/i, cat: 'Clicker & Idle' },
+    { rx: /\b(granny|five nights|fnaf|freddy|backrooms|poppy|baldi|horror|scary|escape|haunted|slender)\b/i, cat: 'Horror & Escape' },
+    { rx: /\b(tetris|wordle|2048|block blast|suika|watermelon|cut the rope|candy crush|bloxorz|lemmings|sudoku|pipe|match|merge|puzzle|jigsaw|minesweeper)\b/i, cat: 'Puzzle' },
+    { rx: /\b(minecraft|minicraft|bloxd|among us|bitlife|riddle school|fleeing the complex|breaking the bank|vice city|gta|craft|sandbox|adventure)\b/i, cat: 'Adventure & Sandbox' },
+    { rx: /\b(pacman|pac-man|frogger|angry birds|fruit ninja|pinball|breakout|snake|bubble|arcade|retro|asteroids|galaga)\b/i, cat: 'Arcade & Classic' }
+  ];
+
+  function classifyGame(g) {
+    var title = String((g && g.name) || '');
+    var raw = String((g && (g.rawCategory || g.category)) || '');
+    for (var i = 0; i < EXACT_GENRE_RULES.length; i++) {
+      if (EXACT_GENRE_RULES[i].rx.test(title)) return EXACT_GENRE_RULES[i].cat;
+    }
+    var low = raw.toLowerCase();
+    if (/sport|ball|soccer|football|basket/.test(low)) return 'Sports';
+    if (/shoot|gun|action|fight|combat|war|battle/.test(low)) return 'Action & Shooter';
+    if (/run|endless|runner/.test(low)) return 'Endless Runner';
+    if (/rac|driv|car|moto|bike/.test(low)) return 'Racing & Driving';
+    if (/platform|rhythm|music|jump/.test(low)) return 'Platformer & Rhythm';
+    if (/card|board|chess|strategy|table/.test(low)) return 'Board & Card';
+    if (/click|idle|sim|tycoon/.test(low)) return 'Clicker & Idle';
+    if (/horror|scary|escape|thrill/.test(low)) return 'Horror & Escape';
+    if (/puzzle|brain|logic|word|match|mahjong/.test(low)) return 'Puzzle';
+    if (/advent|rpg|sandbox|open/.test(low)) return 'Adventure & Sandbox';
+    return 'Arcade & Classic';
+  }
+
+  function makeArtDataUrl(name, cat) {
+    var palette = [['#1a74e2', '#6bd0ff'], ['#6b38fb', '#3fa0ef'], ['#0e9f6e', '#6bd0ff'], ['#e24a1a', '#ff9b6b'], ['#d92672', '#8a5cff']];
+    var hash = 0; for (var i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+    var pair = palette[Math.abs(hash) % palette.length];
+    var cleanTitle = String(name || 'Game').replace(/[<>&"']/g, '').slice(0, 18);
+    var cleanCat = String(cat || 'Game').replace(/[<>&"']/g, '').slice(0, 20);
+    var svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + pair[0] + '"/><stop offset="100%" stop-color="' + pair[1] + '"/></linearGradient></defs>' +
+      '<rect width="300" height="300" fill="#0f1420"/>' +
+      '<circle cx="245" cy="55" r="95" fill="url(#g)" opacity="0.32"/><circle cx="55" cy="245" r="110" fill="url(#g)" opacity="0.22"/>' +
+      '<rect x="26" y="26" width="248" height="248" rx="28" fill="none" stroke="url(#g)" stroke-width="3" opacity="0.45"/>' +
+      '<g transform="translate(150 116)" fill="none" stroke="#eef6ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">' +
+      '<rect x="-42" y="-22" width="84" height="48" rx="22" fill="url(#g)" fill-opacity="0.35"/><path d="M-22 2h12m-6-6v12m24-4h.01M24 6h.01"/></g>' +
+      '<text x="150" y="198" text-anchor="middle" fill="#eef6ff" font-family="system-ui,sans-serif" font-size="22" font-weight="800">' + cleanTitle + '</text>' +
+      '<text x="150" y="226" text-anchor="middle" fill="#9fb4c8" font-family="system-ui,sans-serif" font-size="14" font-weight="600">' + cleanCat + '</text></svg>';
+    return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+  }
+
+  function nameKey(name) { return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase(); }
+  function dedupeGames(games) {
+    var seen = {}, out = [];
+    games.forEach(function (g) {
+      var k = nameKey(g && g.name);
+      if (!k || seen[k]) return;
+      seen[k] = true; out.push(g);
+    });
+    return out;
+  }
+
+  var playerModal = $('bm-player-modal'), playerFrame = $('bm-player-frame'), playerTitle = $('bm-player-title'), playerNewTab = $('bm-player-newtab');
+  function openEmbedGame(game) { playerTitle.textContent = game.name; playerFrame.src = game.embedUrl; playerNewTab.href = game.embedUrl; playerModal.hidden = false; }
+  function closeEmbedGame() { playerModal.hidden = true; playerFrame.src = 'about:blank'; if (lastPlayed && document.body.contains(lastPlayed)) lastPlayed.focus(); }
+  $('bm-player-close').addEventListener('click', closeEmbedGame);
+  $('bm-player-fs').addEventListener('click', function () { if (playerFrame.requestFullscreen) playerFrame.requestFullscreen().catch(function () {}); });
+
+  var PAGE_SIZE = 24, VISIBLE_TABS = 6, FEATURED_MAX = 16, FEATURED_MIN = 10;
+  var FEATURED_NAMES = ['Basketball Stars', 'Basket Random', '1v1.lol', 'Vice City', 'Geometry Dash', 'Moto X3M', 'Granny', 'Slope', 'Drift Hunters', 'Retro Bowl', 'Subway Surfers', 'Run 3', 'Crossy Road', 'Cookie Clicker', 'Flappy Bird', 'Classic Chess'];
+  var gamesPanel = $('view-games'), grid = $('bm-grid'), pager = $('bm-pager'), statusEl = $('bm-status'), heading = $('bm-heading'), totalPill = $('bm-total-pill');
+  var searchEl = $('bm-search'), tabsEl = $('bm-tabs'), sizeEl = $('bm-size'), prevBtn = $('bm-prev'), nextBtn = $('bm-next'), shuffleBtn = $('bm-random');
+  var featured = $('bm-featured'), track = $('bm-track'), leftBtn = $('bm-left'), rightBtn = $('bm-right'), moreWrap = $('bm-more-wrap'), moreBtn = $('bm-more'), menuEl = $('bm-menu'), badge = $('bm-badge');
+
+  var state = { page: 1, pages: 1, query: '', category: '' };
+  var reqId = 0, lastPlayed = null, ready = false, tabsBuilt = false, glider = null, allCatalog = [];
+
+  function listOf(r) { return Array.isArray(r) ? r : (r && r.games) || []; }
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function setHeading(text) { heading.textContent = text; heading.classList.remove('swap'); void heading.offsetWidth; heading.classList.add('swap'); }
+  function skeleton(n) { grid.innerHTML = ''; grid.setAttribute('aria-busy', 'true'); for (var i = 0; i < n; i++) grid.appendChild(el('div', 'bm-skel')); }
+  function message(title, body, isError, actionLabel, action) {
+    grid.innerHTML = ''; grid.setAttribute('aria-busy', 'false'); pager.hidden = true;
+    var box = el('div', 'bm-msg' + (isError ? ' error' : ''));
+    box.appendChild(el('h3', null, title)); box.appendChild(el('p', null, body));
+    if (actionLabel) { var b = el('button', 'bm-btn primary', actionLabel); b.type = 'button'; b.addEventListener('click', action); box.appendChild(b); }
+    grid.appendChild(box);
+  }
+
+  function resolveImages(games) {
+    return Promise.all(games.map(function (g) {
+      if (g.imageUrl) return Promise.resolve(g.imageUrl);
+      if (g.image_token && ready) return Lumin.getImageUrl(g.image_token).catch(function () { return ''; });
+      return Promise.resolve('');
+    }));
+  }
+
+  function makeCard(g, imgUrl, i) {
+    var card = el('button', 'bm-card');
+    card.type = 'button'; card.style.setProperty('--i', i); card.setAttribute('aria-label', 'Play ' + g.name);
+    var wrap = el('div', 'bm-thumbwrap');
+    var img = el('img', 'bm-thumb');
+    var fallbackArt = makeArtDataUrl(g.name, g.classifiedCat || g.category);
+    img.src = imgUrl || fallbackArt; img.alt = g.name; img.loading = 'lazy';
+    img.addEventListener('error', function () { if (img.src !== fallbackArt) img.src = fallbackArt; });
+    wrap.appendChild(img);
+    var ov = el('span', 'bm-play-ov'); ov.setAttribute('aria-hidden', 'true');
+    ov.innerHTML = '<i><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></i>';
+    wrap.appendChild(ov); card.appendChild(wrap);
+    attachTilt(card);
+    var meta = el('div', 'bm-meta');
+    meta.appendChild(el('span', 'bm-name', g.name));
+    meta.appendChild(el('span', 'bm-cat', g.classifiedCat || g.category));
+    card.appendChild(meta);
+    card.addEventListener('click', function () { play(g, card); });
+    return card;
+  }
+
+  async function renderGames(games, id) {
+    var imgs = await resolveImages(games);
+    if (id !== reqId) return;
+    grid.innerHTML = ''; grid.setAttribute('aria-busy', 'false');
+    var frag = document.createDocumentFragment();
+    games.forEach(function (g, i) { frag.appendChild(makeCard(g, imgs[i], i)); });
+    grid.appendChild(frag);
+  }
+
+  function updatePager() {
+    pager.hidden = state.pages <= 1;
+    $('bm-page').textContent = 'Page ' + state.page + ' of ' + state.pages;
+    prevBtn.disabled = state.page <= 1; nextBtn.disabled = state.page >= state.pages;
+  }
+  function updateArrows() { leftBtn.disabled = track.scrollLeft <= 4; rightBtn.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4; }
+  function slide(dir) { track.scrollBy({ left: dir * track.clientWidth * 0.85 }); }
+  function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function shuffled(arr) { var a = arr.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  async function loadFeatured(reshuffle) {
+    var picks = [];
+    FEATURED_NAMES.forEach(function (fname) {
+      var q = norm(fname);
+      var match = allCatalog.filter(function (g) { return norm(g.name) === q; })[0] || allCatalog.filter(function (g) { return norm(g.name).indexOf(q) > -1; })[0];
+      if (match) picks.push(match);
+    });
+    picks = dedupeGames(picks);
+    if (picks.length < FEATURED_MIN) picks = dedupeGames(picks.concat(allCatalog)).slice(0, FEATURED_MIN);
+    if (reshuffle === true) picks = shuffled(picks);
+    picks = picks.slice(0, FEATURED_MAX);
+    if (!picks.length) { featured.hidden = true; return; }
+    var imgs = await resolveImages(picks);
+    track.innerHTML = '';
+    picks.forEach(function (g, i) { track.appendChild(makeCard(g, imgs[i], i)); });
+    track.scrollLeft = 0; featured.hidden = !!state.query;
+    requestAnimationFrame(updateArrows);
+  }
+
+  leftBtn.addEventListener('click', function () { slide(-1); });
+  rightBtn.addEventListener('click', function () { slide(1); });
+  track.addEventListener('scroll', updateArrows, { passive: true });
+  shuffleBtn.addEventListener('click', function () { loadFeatured(true); });
+
+  function applySize() {
+    var min = +sizeEl.min, max = +sizeEl.max, v = +sizeEl.value;
+    sizeEl.style.setProperty('--fill', ((v - min) / (max - min) * 100) + '%');
+    gamesPanel.style.setProperty('--tile', v + 'px');
+  }
+  sizeEl.addEventListener('input', applySize); applySize();
+
+  function normalizeCatalogEntry(g) { g.classifiedCat = classifyGame(g); return g; }
+
+  async function buildUnifiedCatalog() {
+    var baseList = EXTRA_EMBEDS.map(normalizeCatalogEntry);
+    if (ready) {
+      try {
+        var first = await Lumin.getGames({ page: 1, limit: 100 });
+        var luminList = listOf(first).map(normalizeCatalogEntry);
+        var totalPages = Math.min(first.pages || 1, 6);
+        if (totalPages > 1) {
+          var restReqs = [];
+          for (var p = 2; p <= totalPages; p++) restReqs.push(Lumin.getGames({ page: p, limit: 100 }).catch(function () { return []; }));
+          var restRes = await Promise.all(restReqs);
+          restRes.forEach(function (r) { listOf(r).forEach(function (item) { luminList.push(normalizeCatalogEntry(item)); }); });
+        }
+        allCatalog = dedupeGames(luminList.concat(baseList));
+      } catch (e) { allCatalog = dedupeGames(baseList); }
+    } else {
+      allCatalog = dedupeGames(baseList);
+    }
+
+    totalPill.textContent = allCatalog.length + ' Games Ready';
+    var activeCats = GENRE_TABS.filter(function (cat) { return allCatalog.some(function (g) { return g.classifiedCat === cat; }); });
+    buildTabs(activeCats);
+    loadFeatured();
+    load();
+    fetchGameMonetize();
+  }
+
+  async function fetchGameMonetize() {
+    try {
+      var ctrl = new AbortController(); var timer = setTimeout(function () { ctrl.abort(); }, 4000);
+      var res = await fetch('https://gamemonetize.com/rssfeed.php?format=json&category=All&type=html5&popularity=newest&company=All&amount=40', { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) return;
+      var data = await res.json();
+      if (!Array.isArray(data)) return;
+      var mapped = data.map(function (g) {
+        return normalizeCatalogEntry({ id: 'gm-' + g.id, name: g.title, category: g.category || 'Arcade', imageUrl: g.thumb || '', embedUrl: g.url || '' });
+      }).filter(function (g) { return g.name && g.embedUrl; });
+      allCatalog = dedupeGames(allCatalog.concat(mapped));
+      totalPill.textContent = allCatalog.length + ' Games Ready';
+      if (!state.query && state.page === 1) load();
+    } catch (e) {}
+  }
+
+  async function load() {
+    var id = ++reqId; skeleton(12);
+    var q = state.query.toLowerCase();
+    var filtered = allCatalog.filter(function (g) {
+      return (!state.category || g.classifiedCat === state.category) && (!q || String(g.name || '').toLowerCase().indexOf(q) > -1);
+    });
+    if (q && ready) {
+      try {
+        var remote = listOf(await Lumin.search(state.query)).map(normalizeCatalogEntry);
+        if (state.category) remote = remote.filter(function (g) { return g.classifiedCat === state.category; });
+        filtered = dedupeGames(filtered.concat(remote));
+      } catch (e) {}
+    }
+    if (id !== reqId) return;
+
+    featured.hidden = !!state.query || !track.children.length;
+    setHeading(state.query ? ('Results for “' + state.query + '”') : (state.category || 'Explore Games'));
+    var total = filtered.length;
+    state.pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (state.page > state.pages) state.page = 1;
+
+    if (!total) {
+      message('No games found', state.query ? 'Try a different name, or clear the search to browse everything.' : 'Nothing in this category yet.', false, 'Clear filters', clearFilters);
+      statusEl.textContent = '0 games';
+      return;
+    }
+    var startIdx = (state.page - 1) * PAGE_SIZE;
+    statusEl.textContent = total + (total === 1 ? ' game found' : ' games found');
+    await renderGames(filtered.slice(startIdx, startIdx + PAGE_SIZE), id);
+    if (id === reqId) updatePager();
+  }
+
+  function clearFilters() { state.query = ''; state.category = ''; state.page = 1; searchEl.value = ''; syncTabs(); load(); }
+
+  function moveGlider(hide) {
+    if (!glider) return;
+    var t = tabsEl.querySelector('.bm-pill[aria-selected="true"]');
+    glider.classList.toggle('off', !t || !!hide || views.games.hidden);
+    if (!t || views.games.hidden) return;
+    glider.style.width = t.offsetWidth + 'px';
+    glider.style.transform = 'translate3d(' + t.offsetLeft + 'px, 0, 0)';
+    if (!glider.classList.contains('ready')) requestAnimationFrame(function () { glider.classList.add('ready'); });
+  }
+  window.addEventListener('resize', function () { moveGlider(); });
+  function allTabs() { return Array.prototype.slice.call(tabsEl.querySelectorAll('.bm-pill')); }
+  function syncTabs() {
+    var inMenu = false;
+    allTabs().forEach(function (t) { var on = (t.dataset.cat || '') === state.category; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+    Array.prototype.forEach.call(menuEl.querySelectorAll('button'), function (b) { var on = b.dataset.cat === state.category; b.setAttribute('aria-selected', String(on)); if (on) inMenu = true; });
+    moreBtn.classList.toggle('active', inMenu);
+    moveGlider(inMenu);
+  }
+  function selectCategory(name, focusEl) { state.category = name; state.page = 1; syncTabs(); closeMenu(); if (focusEl) focusEl.focus(); load(); }
+
+  function buildTabs(names) {
+    if (tabsBuilt || !names.length) return;
+    tabsBuilt = true;
+    glider = el('span', 'bm-glider'); glider.setAttribute('aria-hidden', 'true'); tabsEl.appendChild(glider);
+    [''].concat(names.slice(0, VISIBLE_TABS)).forEach(function (name) {
+      var b = el('button', 'bm-pill', name || 'All');
+      b.type = 'button'; b.dataset.cat = name; b.setAttribute('role', 'tab');
+      b.addEventListener('click', function () { selectCategory(name, null); });
+      tabsEl.appendChild(b);
+    });
+    tabsEl.hidden = false;
+    var rest = names.slice(VISIBLE_TABS);
+    if (rest.length) {
+      rest.forEach(function (name) {
+        var b = el('button', null, name); b.type = 'button'; b.dataset.cat = name; b.setAttribute('role', 'tab');
+        b.addEventListener('click', function () { selectCategory(name, moreBtn); });
+        menuEl.appendChild(b);
+      });
+      badge.textContent = rest.length; moreWrap.hidden = false;
+    }
+    syncTabs();
+  }
+
+  function closeMenu() { menuEl.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); }
+  moreBtn.addEventListener('click', function (e) { e.stopPropagation(); var open = menuEl.hidden; menuEl.hidden = !open; moreBtn.setAttribute('aria-expanded', String(open)); });
+  document.addEventListener('click', function (e) { if (!moreWrap.contains(e.target)) closeMenu(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (!menuEl.hidden) { closeMenu(); moreBtn.focus(); }
+      if (!playerModal.hidden) closeEmbedGame();
+      proxyModal.hidden = true;
+    }
+  });
+
+  async function play(game, card) {
+    lastPlayed = card;
+    if (game.embedUrl) { openEmbedGame(game); return; }
+    try { await Lumin.loadGame(game.id); }
+    catch (err) { statusEl.textContent = "Couldn't start " + game.name; }
+  }
+
+  var debounce;
+  searchEl.addEventListener('input', function () {
+    clearTimeout(debounce);
+    debounce = setTimeout(function () { state.query = searchEl.value.trim(); state.page = 1; load(); }, 200);
+  });
+  prevBtn.addEventListener('click', function () { if (state.page > 1) { state.page--; load(); gamesPanel.scrollIntoView({ behavior: 'smooth' }); } });
+  nextBtn.addEventListener('click', function () { if (state.page < state.pages) { state.page++; load(); gamesPanel.scrollIntoView({ behavior: 'smooth' }); } });
+
+  async function start() {
+    skeleton(12);
+    if (typeof Lumin !== 'undefined' && !window.__bmSdkFailed) {
+      try {
+        await Lumin.init({ headless: true });
+        ready = true;
+        Lumin.on('gameEnd', function () { if (lastPlayed && document.body.contains(lastPlayed)) lastPlayed.focus(); });
+      } catch (err) { ready = false; }
+    }
+    await buildUnifiedCatalog();
+  }
+
+  window.addEventListener('pagehide', function () { try { if (ready) Lumin.destroy(); } catch (e) {} });
+  start();
+})();
+</script>
